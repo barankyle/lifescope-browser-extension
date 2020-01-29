@@ -54,7 +54,7 @@ const audioSites = [
 
 const apollo = apolloProvider.provide().$apolloProvider.defaultClient;
 
-let tagRegex = /#[^#\s]+/g;
+let tagRegex = /#[\w-]+/g;
 
 function logVisit() {
 	alert('Visit logged!');
