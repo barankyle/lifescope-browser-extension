@@ -1,63 +1,107 @@
 <template>
-  <div class="flexbox flex-column flex-x-center">
-    <div class="login-status">
-      <a href="https://app.lifescope.io" target="_blank">
-        <div v-if="$data.loggedIn === false">Log in to LifeScope to continue</div>
-        <div v-else-if="$data.loggedIn === true">Logged into LifeScope</div>
-      </a>
-    </div>
-    <div class="flexbox flex-column">
-      <button v-if="domainWhitelisted === true" class="danger" v-on:click="deleteDomainWhitelistEntry" style="margin-bottom: 0.5em">Stop tracking this Site</button>
-      <button v-else-if="domainWhitelisted === false" class="primary" v-on:click="addDomainWhitelistEntry" style="margin-bottom: 0.5em">Start tracking this Site</button>
-      <button v-if="siteWhitelisted === true" class="danger margin-bottom-1em" v-on:click="deleteSiteWhitelistEntry">Stop tracking this Page</button>
-      <button v-else-if="siteWhitelisted === false" class="primary margin-bottom-1em" v-on:click="addSiteWhitelistEntry">Start tracking this Page</button>
-      <button v-on:click="openOptionsPage">Open Extension Options</button>
-    </div>
+    <div class="flexbox flex-column flex-x-center">
+        <div class="login-status">
+            <a href="https://app.lifescope.io"
+               target="_blank"
+            >
+                <div v-if="$data.loggedIn === false">Log in to LifeScope to continue</div>
+                <div v-else-if="$data.loggedIn === true">Logged into LifeScope</div>
+            </a>
+        </div>
+        <div class="flexbox flex-column">
+            <button v-if="domainWhitelisted === true"
+                    class="danger"
+                    v-on:click="deleteDomainWhitelistEntry"
+                    style="margin-bottom: 0.5em"
+            >Stop tracking this Site
+            </button>
+            <button v-else-if="domainWhitelisted === false"
+                    class="primary"
+                    v-on:click="addDomainWhitelistEntry"
+                    style="margin-bottom: 0.5em"
+            >Start tracking this Site
+            </button>
+            <button v-if="siteWhitelisted === true"
+                    class="danger margin-bottom-1em"
+                    v-on:click="deleteSiteWhitelistEntry"
+            >Stop tracking this Page
+            </button>
+            <button v-else-if="siteWhitelisted === false"
+                    class="primary margin-bottom-1em"
+                    v-on:click="addSiteWhitelistEntry"
+            >Start tracking this Page
+            </button>
+            <button v-on:click="openOptionsPage">Open Extension Options</button>
+        </div>
 
-  	<div v-if="domainPending" class="crawl-pending">
-		Your site history is being parsed. You may tag when this process is complete.
-	</div>
+        <div v-if="domainPending"
+             class="crawl-pending"
+        >
+            Your site history is being parsed. You may tag when this process is complete.
+        </div>
 
-  	<div v-if="sitePending" class="crawl-pending">
-		Your page history is being parsed. You may tag when this process is complete.
-  	</div>
+        <div v-if="sitePending"
+             class="crawl-pending"
+        >
+            Your page history is being parsed. You may tag when this process is complete.
+        </div>
 
-    <div id="tagging" class="flexbox flex-column flex-x-center content actions" v-if="(domainWhitelisted === true || siteWhitelisted === true) && $data.loggedIn === true && $data.item.id != null">
-      <div class="flexbox flex-x-center">
-        <div class="title">Tag this page</div>
-        <a class="how-to" href="https://lifescope.io/how-to" target="_blank"><i class="fa fa-question-circle"></i></a>
-      </div>
-
-      <div class="tagging">
-        <form v-on:submit.prevent="addTag">
-          <div class="add-tag">
-            <span>#</span>
-            <input type="text" placeholder="Add a tag" v-model="tagName">
-            <i class="fa fa-plus" v-on:click="addTag"></i>
-          </div>
-          <div class="tags">
-            <div v-if="$data.item && $data.item.tags" v-for="tag in $data.item.tags">
-              <span v-on:click="searchTag(tag)">#{{ tag }}</span>
-              <i class="delete fa fa-times" v-on:click="removeTag(tag)"></i>
+        <div id="tagging"
+             class="flexbox flex-column flex-x-center content actions"
+             v-if="(domainWhitelisted === true || siteWhitelisted === true) && $data.loggedIn === true && $data.item.id != null"
+        >
+            <div class="flexbox flex-x-center">
+                <div class="title">Tag this page</div>
+                <a class="how-to"
+                   href="https://lifescope.io/how-to"
+                   target="_blank"
+                >
+                    <i class="fa fa-question-circle"></i>
+                </a>
             </div>
-          </div>
-        </form>
-      </div>
+
+            <div class="tagging">
+                <form v-on:submit.prevent="addTag">
+                    <div class="add-tag">
+                        <span>#</span>
+                        <input type="text"
+                               placeholder="Add a tag"
+                               v-model="tagName"
+                        >
+                        <i class="fa fa-plus"
+                           v-on:click="addTag"
+                        ></i>
+                    </div>
+                    <div class="tags">
+                        <div v-if="$data.item && $data.item.tags"
+                             v-for="tag in $data.item.tags"
+                        >
+                            <span v-on:click="searchTag(tag)">#{{ tag }}</span>
+                            <i class="delete fa fa-times"
+                               v-on:click="removeTag(tag)"
+                            ></i>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <script>
 	import url from 'url';
 
+	import Bowser from 'bowser';
 	import _ from 'lodash';
-    import axios from 'axios';
-	import bowser from 'bowser';
+	import axios from 'axios';
 	import gql from 'graphql-tag';
 
 	let currentBrowser;
 
-	switch(bowser.name) {
+	let browserInst = Bowser.getParser(window.navigator.userAgent);
+	let browserName = browserInst.getBrowserName();
+
+	switch(browserName) {
 		case ('Chrome'):
 			currentBrowser = chrome;
 
@@ -80,110 +124,110 @@
 	let domainRegex = /([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+/;
 	let siteRegex = /^(http(s)?:\/\/)([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+(\/([.a-zA-Z0-9_-~!$&'()*+,;=:@])+)*\/?/;
 
-    export default {
-        data() {
-          return {
-          	  loggedIn: false,
-          	  connection: {},
-          	  domain: null,
-              url: null,
-              item: {},
-              tagName: null
-          };
-        },
+	export default {
+		data() {
+			return {
+				loggedIn: false,
+				connection: {},
+				domain: null,
+				url: null,
+				item: {},
+				tagName: null
+			};
+		},
 
-        computed: {
-	        domainWhitelisted: function() {
-	        	let self = this;
-		        let whitelistHit = false;
+		computed: {
+			domainWhitelisted: function() {
+				let self = this;
+				let whitelistHit = false;
 
-		        _.each(this.$store.state.whitelist, function(item) {
-			        let domainRegex = new RegExp(item);
+				_.each(this.$store.state.whitelist, function(item) {
+					let domainRegex = new RegExp(item);
 
-			        if (domainRegex.test(self.$data.domain) === true) {
-				        whitelistHit = true;
+					if (domainRegex.test(self.$data.domain) === true) {
+						whitelistHit = true;
 
-				        return;
-			        }
-		        });
+						return;
+					}
+				});
 
-		        return whitelistHit;
-	        },
+				return whitelistHit;
+			},
 
-	        siteWhitelisted: function() {
-		        let self = this;
-		        let whitelistHit = false;
+			siteWhitelisted: function() {
+				let self = this;
+				let whitelistHit = false;
 
-		        _.each(this.$store.state.whitelist, function(item) {
-			        let parsedUrl = url.parse(item);
+				_.each(this.$store.state.whitelist, function(item) {
+					let parsedUrl = url.parse(item);
 
-			        if (parsedUrl.protocol && parsedUrl.host && parsedUrl.pathname) {
-				        let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host;
+					if (parsedUrl.protocol && parsedUrl.host && parsedUrl.pathname) {
+						let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host;
 
-				        if (parsedUrl.pathname !== '/') {
-				        	condensedUrl += parsedUrl.pathname
-                        }
+						if (parsedUrl.pathname !== '/') {
+							condensedUrl += parsedUrl.pathname
+						}
 
-				        let tempRegex = new RegExp(condensedUrl);
+						let tempRegex = new RegExp(condensedUrl);
 
-				        if (siteRegex.test(item) === true && tempRegex.test(self.$data.url) === true) {
-					        whitelistHit = true;
+						if (siteRegex.test(item) === true && tempRegex.test(self.$data.url) === true) {
+							whitelistHit = true;
 
-					        return;
-				        }
-			        }
-		        });
+							return;
+						}
+					}
+				});
 
-		        return whitelistHit;
-	        },
+				return whitelistHit;
+			},
 
-	        domainPending: function() {
-		        let self = this;
-		        let whitelistHit = false;
+			domainPending: function() {
+				let self = this;
+				let whitelistHit = false;
 
-		        _.each(this.$store.state.whitelistPending, function(value, item) {
-			        let domainRegex = new RegExp(item);
+				_.each(this.$store.state.whitelistPending, function(value, item) {
+					let domainRegex = new RegExp(item);
 
-			        if (domainRegex.test(self.$data.domain) === true) {
-				        whitelistHit = true;
+					if (domainRegex.test(self.$data.domain) === true) {
+						whitelistHit = true;
 
-				        return;
-			        }
-		        });
+						return;
+					}
+				});
 
-		        return whitelistHit;
-	        },
+				return whitelistHit;
+			},
 
-	        sitePending: function() {
-		        let self = this;
-		        let whitelistHit = false;
+			sitePending: function() {
+				let self = this;
+				let whitelistHit = false;
 
-		        _.each(this.$store.state.whitelistPending, function(value, item) {
-			        let parsedUrl = url.parse(item);
+				_.each(this.$store.state.whitelistPending, function(value, item) {
+					let parsedUrl = url.parse(item);
 
-			        if (parsedUrl.protocol && parsedUrl.host && parsedUrl.pathname) {
-				        let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host;
+					if (parsedUrl.protocol && parsedUrl.host && parsedUrl.pathname) {
+						let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host;
 
-				        if (parsedUrl.pathname !== '/') {
-					        condensedUrl += parsedUrl.pathname
-				        }
+						if (parsedUrl.pathname !== '/') {
+							condensedUrl += parsedUrl.pathname
+						}
 
-				        let tempRegex = new RegExp(condensedUrl);
+						let tempRegex = new RegExp(condensedUrl);
 
-				        if (siteRegex.test(item) === true && tempRegex.test(self.$data.url) === true) {
-					        whitelistHit = true;
+						if (siteRegex.test(item) === true && tempRegex.test(self.$data.url) === true) {
+							whitelistHit = true;
 
-					        return;
-				        }
-			        }
-		        });
+							return;
+						}
+					}
+				});
 
-		        return whitelistHit;
-	        },
-        },
+				return whitelistHit;
+			},
+		},
 
-	    methods: {
-		    addDomainWhitelistEntry: async function() {
+		methods: {
+			addDomainWhitelistEntry: async function() {
 				if (this.$data.domain.match(domainRegex) == null) {
 					return;
 				}
@@ -199,266 +243,267 @@
 
 					currentBrowser.runtime.sendMessage({
 						data: 'triggerHistoryCrawl',
-                        connection: this.$data.connection
+						connection: this.$data.connection
 					});
 				}
-		    },
+			},
 
-		    deleteDomainWhitelistEntry: function() {
+			deleteDomainWhitelistEntry: function() {
 				let self = this;
 
-                _.eachRight(this.$store.state.whitelist, function(item, i) {
-                	let domainRegex = new RegExp(item);
+				_.eachRight(this.$store.state.whitelist, function(item, i) {
+					let domainRegex = new RegExp(item);
 
-                	if (domainRegex.test(self.$data.domain) === true) {
-		                self.$store.state.whitelist.splice(i, 1);
-                    }
-                });
+					if (domainRegex.test(self.$data.domain) === true) {
+						self.$store.state.whitelist.splice(i, 1);
+					}
+				});
 
-                this.$store.dispatch({
-                    type: 'saveUserSettings'
-                });
-		    },
+				this.$store.dispatch({
+					type: 'saveUserSettings'
+				});
+			},
 
-		    addSiteWhitelistEntry: async function() {
-			    if (this.$data.url.match(siteRegex) == null) {
-				    return;
-			    }
+			addSiteWhitelistEntry: async function() {
+				if (this.$data.url.match(siteRegex) == null) {
+					return;
+				}
 
-			    let parsedUrl = url.parse(this.$data.url);
+				let parsedUrl = url.parse(this.$data.url);
 
-			    let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host;
+				let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host;
 
-			    if (parsedUrl.pathname !== '/') {
-				    condensedUrl += parsedUrl.pathname
-			    }
+				if (parsedUrl.pathname !== '/') {
+					condensedUrl += parsedUrl.pathname
+				}
 
-			    let domainWhitelistExists = this.$store.state.whitelist.indexOf(condensedUrl);
+				let domainWhitelistExists = this.$store.state.whitelist.indexOf(condensedUrl);
 
-			    if (domainWhitelistExists === -1) {
-				    this.$store.state.whitelist.push(condensedUrl);
+				if (domainWhitelistExists === -1) {
+					this.$store.state.whitelist.push(condensedUrl);
 
-				    await this.$store.dispatch({
-					    type: 'saveUserSettings'
-				    });
+					await this.$store.dispatch({
+						type: 'saveUserSettings'
+					});
 
-				    currentBrowser.runtime.sendMessage({
-					    data: 'triggerHistoryCrawl',
-					    connection: this.$data.connection
-				    });
-			    }
-		    },
+					currentBrowser.runtime.sendMessage({
+						data: 'triggerHistoryCrawl',
+						connection: this.$data.connection
+					});
+				}
+			},
 
-		    deleteSiteWhitelistEntry: function() {
-			    let self = this;
+			deleteSiteWhitelistEntry: function() {
+				let self = this;
 
-			    let parsedUrl = url.parse(this.$data.url);
+				let parsedUrl = url.parse(this.$data.url);
 
-			    let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host + parsedUrl.pathname;
+				let condensedUrl = parsedUrl.protocol + '//' + parsedUrl.host + parsedUrl.pathname;
 
-			    let index = _.findIndex(this.$store.state.whitelist, function(item) {
-				    return item === condensedUrl;
-			    });
+				let index = _.findIndex(this.$store.state.whitelist, function(item) {
+					return item === condensedUrl;
+				});
 
-			    if (index >= 0) {
-				    this.$store.state.whitelist.splice(index, 1);
+				if (index >= 0) {
+					this.$store.state.whitelist.splice(index, 1);
 
-				    this.$store.dispatch({
-					    type: 'saveUserSettings'
-				    });
-			    }
-		    },
+					this.$store.dispatch({
+						type: 'saveUserSettings'
+					});
+				}
+			},
 
-            openOptionsPage: function() {
-		    	if (currentBrowser.runtime.openOptionsPage) {
-				    currentBrowser.runtime.openOptionsPage();
-			    }
-			    else {
-				    window.open(currentBrowser.runtime.getURL('options.html'));
-                }
-            },
+			openOptionsPage: function() {
+				if (currentBrowser.runtime.openOptionsPage) {
+					currentBrowser.runtime.openOptionsPage();
+				}
+				else {
+					window.open(currentBrowser.runtime.getURL('options.html'));
+				}
+			},
 
-		    addTag: async function() {
-			    let strippedTag = this.$data.tagName.replace(/[^a-zA-Z0-9-]/, '');
-			    let slugifiedTag = strippedTag.toLowerCase().replace(/\s/g, '-');
+			addTag: async function() {
+				let strippedTag = this.$data.tagName.replace(/[^a-zA-Z0-9-]/, '');
+				let slugifiedTag = strippedTag.toLowerCase().replace(/\s/g, '-');
 
-			    if (slugifiedTag.length === 0) {
-				    this.$data.tagName = 0;
+				if (slugifiedTag.length === 0) {
+					this.$data.tagName = 0;
 
-				    return;
-			    }
+					return;
+				}
 
-			    await this.$apollo.mutate({
-				    mutation: gql`mutation tagContent($id: String, $tags: [String]) {
+				await this.$apollo.mutate({
+					mutation: gql`mutation tagContent($id: String, $tags: [String]) {
 						tagContent (id: $id, tags: $tags) {
 						  id
 						}
 					}`,
-				    variables: {
-					    id: this.$data.item.id,
-					    tags: [slugifiedTag]
-				    }
-			    });
+					variables: {
+						id: this.$data.item.id,
+						tags: [slugifiedTag]
+					}
+				});
 
-			    if (!this.$data.item.tagMasks) {
-				    this.$data.item.tagMasks = {};
-			    }
+				if (!this.$data.item.tagMasks) {
+					this.$data.item.tagMasks = {};
+				}
 
-			    if (this.$data.item.tagMasks && !this.$data.item.tagMasks.added) {
-				    this.$data.item.tagMasks.added = [];
-			    }
+				if (this.$data.item.tagMasks && !this.$data.item.tagMasks.added) {
+					this.$data.item.tagMasks.added = [];
+				}
 
-			    if (this.$data.item.tagMasks && !this.$data.item.tagMasks.removed) {
-				    this.$data.item.tagMasks.removed = [];
-			    }
+				if (this.$data.item.tagMasks && !this.$data.item.tagMasks.removed) {
+					this.$data.item.tagMasks.removed = [];
+				}
 
-			    let addedIndex = _.findIndex(this.$data.item.tagMasks.added, function(item) {
-				    return item === strippedTag;
-			    });
+				let addedIndex = _.findIndex(this.$data.item.tagMasks.added, function(item) {
+					return item === strippedTag;
+				});
 
-			    let removedIndex = _.findIndex(this.$data.item.tagMasks.removed, function(item) {
-				    return item === strippedTag;
-			    });
+				let removedIndex = _.findIndex(this.$data.item.tagMasks.removed, function(item) {
+					return item === strippedTag;
+				});
 
-			    if (addedIndex === -1) {
-				    this.$data.item.tagMasks.added.push(strippedTag);
-			    }
+				if (addedIndex === -1) {
+					this.$data.item.tagMasks.added.push(strippedTag);
+				}
 
-			    if (removedIndex >= 0) {
-				    this.$data.item.tagMasks.removed.splice(removedIndex, 1);
-			    }
+				if (removedIndex >= 0) {
+					this.$data.item.tagMasks.removed.splice(removedIndex, 1);
+				}
 
-			    this.$data.tagName = '';
-		    },
+				this.$data.tagName = '';
+			},
 
-		    removeTag: async function(tag) {
-			    let strippedTag = tag.replace(/[^a-zA-Z0-9\s-]/, '').replace(/\s+/g, ' ');
-			    let slugifiedTag = strippedTag.toLowerCase().replace(/\s/g, '-');
+			removeTag: async function(tag) {
+				let strippedTag = tag.replace(/[^a-zA-Z0-9\s-]/, '').replace(/\s+/g, ' ');
+				let slugifiedTag = strippedTag.toLowerCase().replace(/\s/g, '-');
 
-			    await this.$apollo.mutate({
-				    mutation: gql`mutation untagContent($id: String, $tags: [String]) {
+				await this.$apollo.mutate({
+					mutation: gql`mutation untagContent($id: String, $tags: [String]) {
 						untagContent (id: $id, tags: $tags) {
 						  id
 						}
 					}`,
-				    variables: {
-					    id: this.$data.item.id,
-					    tags: [slugifiedTag]
-				    }
-			    });
+					variables: {
+						id: this.$data.item.id,
+						tags: [slugifiedTag]
+					}
+				});
 
-			    if (!this.$data.item.tagMasks) {
-				    this.$data.item.tagMasks = {};
-			    }
+				if (!this.$data.item.tagMasks) {
+					this.$data.item.tagMasks = {};
+				}
 
-			    if (this.$data.item.tagMasks && !this.$data.item.tagMasks.added) {
-				    this.$data.item.tagMasks.added = [];
-			    }
+				if (this.$data.item.tagMasks && !this.$data.item.tagMasks.added) {
+					this.$data.item.tagMasks.added = [];
+				}
 
-			    if (this.$data.item.tagMasks && !this.$data.item.tagMasks.removed) {
-				    this.$data.item.tagMasks.removed = [];
-			    }
+				if (this.$data.item.tagMasks && !this.$data.item.tagMasks.removed) {
+					this.$data.item.tagMasks.removed = [];
+				}
 
-			    let addedIndex = _.findIndex(this.$data.item.tagMasks.added, function(item) {
-				    return item === strippedTag;
-			    });
+				let addedIndex = _.findIndex(this.$data.item.tagMasks.added, function(item) {
+					return item === strippedTag;
+				});
 
-			    let removedIndex = _.findIndex(this.$data.item.tagMasks.removed, function(item) {
-				    return item === strippedTag;
-			    });
+				let removedIndex = _.findIndex(this.$data.item.tagMasks.removed, function(item) {
+					return item === strippedTag;
+				});
 
-			    if (addedIndex >= 0) {
-				    this.$data.item.tagMasks.added.splice(addedIndex, 1);
-			    }
+				if (addedIndex >= 0) {
+					this.$data.item.tagMasks.added.splice(addedIndex, 1);
+				}
 
-			    if (removedIndex === -1) {
-				    this.$data.item.tagMasks.removed.push(strippedTag);
-			    }
-		    },
+				if (removedIndex === -1) {
+					this.$data.item.tagMasks.removed.push(strippedTag);
+				}
+			},
 
-            searchTag: async function(tag) {
-		    	let result = await this.$apollo.mutate({
-                    mutation: gql`mutation searchUpsert($query: String, $filters: String, $favorited: Boolean, $icon: String, $icon_color: String, $name: String){
+			searchTag: async function(tag) {
+				let result = await this.$apollo.mutate({
+					mutation: gql`mutation searchUpsert($query: String, $filters: String, $favorited: Boolean, $icon: String, $icon_color: String, $name: String){
                         searchUpsert(filters: $filters, query: $query, favorited: $favorited, icon: $icon, icon_color: $icon_color, name: $name) {
                             id
                         }
                     }`,
-                    variables: {
-                    	query: '#' + tag
-                    }
-                });
+					variables: {
+						query: '#' + tag
+					}
+				});
 
-		    	let data = result.data.searchUpsert;
+				let data = result.data.searchUpsert;
 
-		    	if (data && data.id) {
-		    		window.open('https://app.lifescope.io/explore?qid=' + data.id);
-                }
-            }
-	    },
+				if (data && data.id) {
+					window.open('https://app.lifescope.io/explore?qid=' + data.id);
+				}
+			}
+		},
 
-        beforeMount: async function() {
-        	let self = this;
+		beforeMount: async function() {
+			let self = this;
 
-            let $apollo = this.$apollo.provider.defaultClient;
+			let $apollo = this.$apollo.provider.defaultClient;
 
-            await this.$store.dispatch({
-                type: 'loadUserSettings'
-            });
+			await this.$store.dispatch({
+				type: 'loadUserSettings'
+			});
 
-            let csrfResponse = await axios.get('https://api.lifescope.io/csrf');
-            self.$store.state.csrf_token = csrfResponse.data ? csrfResponse.data.csrf_token: null;
+			let csrfResponse = await axios.get('https://api.lifescope.io/csrf');
+			self.$store.state.csrf_token = csrfResponse.data ? csrfResponse.data.csrf_token : null;
 
-	        await new Promise(function(resolve, reject) {
-		        currentBrowser.tabs.query({
-			        active: true
-		        }, function(tab) {
-			        let active = tab[0];
+			await new Promise(function(resolve, reject) {
+				currentBrowser.tabs.query({
+					active: true
+				}, function(tab) {
+					let active = tab[0];
 
-			        let parsed = url.parse(active.url);
+					let parsed = url.parse(active.url);
 
-			        self.$data.domain = parsed.hostname;
-			        self.$data.url = active.url;
+					self.$data.domain = parsed.hostname;
+					self.$data.url = active.url;
 
-                    resolve();
-		        });
-	        });
+					resolve();
+				});
+			});
 
-            let sessionIdCookie = await new Promise(function(resolve, reject) {
-	            currentBrowser.cookies.get({
-                    url: 'https://app.lifescope.io',
-                    name: 'sessionid'
-                }, function(results) {
-                    resolve(results);
-                });
-            });
+			let sessionIdCookie = await new Promise(function(resolve, reject) {
+				currentBrowser.cookies.get({
+					url: 'https://app.lifescope.io',
+					name: 'sessionid'
+				}, function(results) {
+					resolve(results);
+				});
+			});
 
-            await new Promise(async function(resolve, reject) {
+			await new Promise(async function(resolve, reject) {
 				if (sessionIdCookie != null) {
 					let result;
 
-                    try {
+					try {
 						result = await $apollo.query({
 							query: gql`query getBrowserConnection($browser: String!) {
-							connectionBrowserOne(browser: $browser) {
-								id,
-								enabled,
-								provider_id,
-								provider_id_string
-							}
-						}`,
+                          connectionBrowserOne(browser: $browser) {
+                              id,
+                              enabled,
+                              provider_id,
+                              provider_id_string
+                          }
+                      }`,
 							variables: {
-								browser: bowser.name
+								browser: browserName
 							},
 							fetchPolicy: 'no-cache'
 						});
-					} catch(err) {
+					}
+					catch(err) {
 						self.$data.loggedIn = false;
 						self.$data.connection = {};
 
 						resolve();
 
 						return;
-                    }
+					}
 
 					let existingBrowserConnection = result.data.connectionBrowserOne;
 
@@ -483,89 +528,89 @@
 
 					resolve();
 				}
-            });
+			});
 
-	        let active;
+			let active;
 
-	        await new Promise(function(resolve, reject) {
-		        currentBrowser.tabs.query({
-			        active: true
-		        }, function(tab) {
-			        active = tab[0].url;
+			await new Promise(function(resolve, reject) {
+				currentBrowser.tabs.query({
+					active: true
+				}, function(tab) {
+					active = tab[0].url;
 
-			        resolve();
-		        });
-	        });
+					resolve();
+				});
+			});
 
-	        getPageContent();
+			getPageContent();
 
-	        async function getPageContent() {
-		        if (self.$data.connection) {
-			        let content = await $apollo.query({
-				        query: gql`query contentFindByIdentifier($identifier: String!) {
-                      contentFindByIdentifier(identifier: $identifier) {
-                        id,
-                        tagMasks {
-                          added,
-                          removed,
-                          source
-                        }
+			async function getPageContent() {
+				if (self.$data.connection) {
+					let content = await $apollo.query({
+						query: gql`query contentFindByIdentifier($identifier: String!) {
+                    contentFindByIdentifier(identifier: $identifier) {
+                      id,
+                      tagMasks {
+                        added,
+                        removed,
+                        source
                       }
-                    }`,
-				        variables: {
-					        identifier: self.$data.connection.id + ':::' + bowser.name + ':::' + active,
-				        },
-				        fetchPolicy: 'no-cache'
-			        });
+                    }
+                  }`,
+						variables: {
+							identifier: self.$data.connection.id + ':::' + browserName + ':::' + active,
+						},
+						fetchPolicy: 'no-cache'
+					});
 
-			        let item = _.get(content, 'data.contentFindByIdentifier');
+					let item = _.get(content, 'data.contentFindByIdentifier');
 
-			        if (item != null) {
-				        Object.defineProperty(item, 'tags', {
-					        get: function() {
-						        let tags = [];
+					if (item != null) {
+						Object.defineProperty(item, 'tags', {
+							get: function() {
+								let tags = [];
 
-						        if (item.tagMasks) {
-							        _.forEach(item.tagMasks.source, function(tag) {
-								        if (tags.indexOf(tag) === -1) {
-									        tags.push(tag);
-								        }
-							        });
+								if (item.tagMasks) {
+									_.forEach(item.tagMasks.source, function(tag) {
+										if (tags.indexOf(tag) === -1) {
+											tags.push(tag);
+										}
+									});
 
-							        _.forEach(item.tagMasks.added, function(tag) {
-								        if (tags.indexOf(tag) === -1) {
-									        tags.push(tag);
-								        }
-							        });
+									_.forEach(item.tagMasks.added, function(tag) {
+										if (tags.indexOf(tag) === -1) {
+											tags.push(tag);
+										}
+									});
 
-							        _.forEach(item.tagMasks.removed, function(tag) {
-								        let index = tags.indexOf(tag);
+									_.forEach(item.tagMasks.removed, function(tag) {
+										let index = tags.indexOf(tag);
 
-								        if (index > -1) {
-									        tags.splice(index, 1);
-								        }
-							        });
-						        }
+										if (index > -1) {
+											tags.splice(index, 1);
+										}
+									});
+								}
 
-						        return tags;
-					        }
-				        });
+								return tags;
+							}
+						});
 
-				        self.$data.item = item;
-			        }
-		        }
-	        }
+						self.$data.item = item;
+					}
+				}
+			}
 
-	        currentBrowser.runtime.onMessage.addListener(function(message, callback) {
-		        if (message.data === 'userSettingsSaved') {
-                    self.$store.dispatch({
-                        type: 'loadUserSettings'
-                    });
-		        }
-                else if (message.data === 'runComplete') {
-		        	getPageContent();
-                }
-	        });
-        }
-    };
+			currentBrowser.runtime.onMessage.addListener(function(message, callback) {
+				if (message.data === 'userSettingsSaved') {
+					self.$store.dispatch({
+						type: 'loadUserSettings'
+					});
+				}
+				else if (message.data === 'runComplete') {
+					getPageContent();
+				}
+			});
+		}
+	};
 </script>

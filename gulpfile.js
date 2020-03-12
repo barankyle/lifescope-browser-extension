@@ -200,9 +200,6 @@ gulp.task('less', function() {
 });
 
 
-gulp.task('lint', ['lint:js', 'lint:json']);
-
-
 gulp.task('lint:js', function() {
 	const eslint = require('gulp-eslint');
 
@@ -248,6 +245,9 @@ gulp.task('lint:less', function() {
 		.pipe(lesshint.failOnError())
 		.pipe(lesshint.reporter());
 });
+
+
+gulp.task('lint', gulp.series('lint:js', 'lint:json'));
 
 
 gulp.task('nunjucks', function() {

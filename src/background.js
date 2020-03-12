@@ -1,8 +1,8 @@
 import url from 'url';
 
+import Bowser from 'bowser';
 import _ from 'lodash';
 import axios from 'axios';
-import bowser from 'bowser';
 import gql from 'graphql-tag';
 import moment from 'moment';
 
@@ -62,7 +62,10 @@ function logVisit() {
 
 let currentBrowser;
 
-switch(bowser.name) {
+let browserInst = Bowser.getParser(window.navigator.userAgent);
+let browserName = browserInst.getBrowserName();
+
+switch(browserName) {
 	case ('Chrome'):
 		currentBrowser = chrome;
 
@@ -88,7 +91,7 @@ async function triggerHistoryCrawl(connection) {
 	});
 
 	//Check to see if any whitelisted domains didn't finish their initial data crawl, and run it if they didn't (as long as they're not on Edge).
-	if (bowser.name !== 'Microsoft Edge') {
+	if (browserName !== 'Microsoft Edge') {
 		_.each(store.state.whitelist, async function(whitelistItem) {
 			//If the whitelistPending entry for a whitelist item is more than 5 minutes old, or is not a date, then clear it.
 			//In the former case, the user likely closed the browser before the history crawl was completed.
@@ -175,7 +178,7 @@ async function triggerHistoryCrawl(connection) {
 								newContent = {
 									connection_id_string: connection.id,
 									provider_id_string: connection.provider_id_string,
-									identifier: connection.id + ':::' + bowser.name + ':::' + data.meta.canonical,
+									identifier: connection.id + ':::' + browserName + ':::' + data.meta.canonical,
 									tagMasks: {
 										source: []
 									},
@@ -237,7 +240,7 @@ async function triggerHistoryCrawl(connection) {
 								newContent = {
 									connection_id_string: connection.id,
 									provider_id_string: connection.provider_id_string,
-									identifier: connection.id + ':::' + bowser.name + ':::' + match.url,
+									identifier: connection.id + ':::' + browserName + ':::' + match.url,
 									tagMasks: {
 										source: []
 									},
@@ -253,11 +256,11 @@ async function triggerHistoryCrawl(connection) {
 							let newEvent = {
 								connection_id_string: connection.id,
 								provider_id_string: connection.provider_id_string,
-								identifier: connection.id + ':::' + bowser.name + ':::visited:::' + match.url + ':::' + moment(visit).utc().toJSON(),
+								identifier: connection.id + ':::' + browserName + ':::visited:::' + match.url + ':::' + moment(visit).utc().toJSON(),
 								content: [newContent],
 								context: 'Visited web page',
 								datetime: moment(visit).utc().toDate(),
-								provider_name: bowser.name + ' Extension',
+								provider_name: browserName + ' Extension',
 								tagMasks: {
 									source: []
 								},
@@ -278,7 +281,7 @@ async function triggerHistoryCrawl(connection) {
 				let startIndex = 0;
 
 				let csrfResponse = await axios.get('https://api.lifescope.io/csrf');
-				store.state.csrf_token = csrfResponse.data ? csrfResponse.data.csrf_token: null;
+				store.state.csrf_token = csrfResponse.data ? csrfResponse.data.csrf_token : null;
 
 				while (!finished) {
 					let slice = events.slice(startIndex, startIndex + sliceSize);
@@ -296,7 +299,8 @@ async function triggerHistoryCrawl(connection) {
 								},
 								fetchPolicy: 'no-cache'
 							});
-						} catch(err) {
+						}
+						catch(err) {
 							failed = true;
 
 							break;
@@ -348,7 +352,7 @@ currentBrowser.runtime.onInstalled.addListener(function() {
 			let result;
 
 			let csrfResponse = await axios.get('https://api.lifescope.io/csrf');
-			store.state.csrf_token = csrfResponse.data ? csrfResponse.data.csrf_token: null;
+			store.state.csrf_token = csrfResponse.data ? csrfResponse.data.csrf_token : null;
 
 			try {
 				result = await apollo.query({
@@ -361,11 +365,12 @@ currentBrowser.runtime.onInstalled.addListener(function() {
                             }
                         }`,
 					variables: {
-						browser: bowser.name
+						browser: browserName
 					},
 					fetchPolicy: 'no-cache'
 				});
-			} catch(err) {
+			}
+			catch(err) {
 				store.state.connection = {};
 
 				return;
@@ -392,7 +397,7 @@ currentBrowser.runtime.onInstalled.addListener(function() {
                                 }
                             }`,
 					variables: {
-						browser: bowser.name
+						browser: browserName
 					},
 					fetchPolicy: 'no-cache'
 				});
@@ -470,7 +475,7 @@ currentBrowser.runtime.onInstalled.addListener(function() {
 						newContent = {
 							connection_id_string: store.state.connection.id,
 							provider_id_string: store.state.connection.provider_id_string,
-							identifier: store.state.connection.id + ':::' + bowser.name + ':::' + data.meta.canonical,
+							identifier: store.state.connection.id + ':::' + browserName + ':::' + data.meta.canonical,
 							tagMasks: {
 								source: []
 							},
@@ -526,11 +531,11 @@ currentBrowser.runtime.onInstalled.addListener(function() {
 							newContent.embed_format = 'iframe';
 						}
 					}
-					catch(error) {
+					catch (error) {
 						newContent = {
 							connection_id_string: store.state.connection.id,
 							provider_id_string: store.state.connection.provider_id_string,
-							identifier: store.state.connection.id + ':::' + bowser.name + ':::' + store.state.url,
+							identifier: store.state.connection.id + ':::' + browserName + ':::' + store.state.url,
 							tagMasks: {
 								source: []
 							},
@@ -544,11 +549,11 @@ currentBrowser.runtime.onInstalled.addListener(function() {
 					newEvent = {
 						connection_id_string: store.state.connection.id,
 						provider_id_string: store.state.connection.provider_id_string,
-						identifier: store.state.connection.id + ':::' + bowser.name + ':::visited:::' + store.state.url + ':::' + visit.utc().toJSON(),
+						identifier: store.state.connection.id + ':::' + browserName + ':::visited:::' + store.state.url + ':::' + visit.utc().toJSON(),
 						content: [newContent],
 						context: 'Visited web page',
 						datetime: visit.utc().toDate(),
-						provider_name: bowser.name + ' Extension',
+						provider_name: browserName + ' Extension',
 						tagMasks: {
 							source: []
 						},
@@ -570,7 +575,8 @@ currentBrowser.runtime.onInstalled.addListener(function() {
 						},
 						fetchPolicy: 'no-cache'
 					});
-				} catch(err) {}
+				}
+				catch(err) {}
 			}
 
 			store.state.lastUrl = store.state.url;

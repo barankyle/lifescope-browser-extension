@@ -1,14 +1,15 @@
-import url from 'url';
-
+import Bowser from 'bowser';
 import Vue from 'vue';
 import Vuex from 'vuex';
-import bowser from 'bowser';
 
 Vue.use(Vuex);
 
 let currentBrowser;
 
-switch(bowser.name) {
+let browserInst = Bowser.getParser(window.navigator.userAgent);
+let browserName = browserInst.getBrowserName();
+
+switch(browserName) {
 	case ('Chrome'):
 		currentBrowser = chrome;
 
@@ -59,7 +60,7 @@ export default new Vuex.Store({
 			})
 		},
 
-		async saveUserSettings({commit}) {
+		async saveUserSettings() {
 			currentBrowser.storage.sync.set({
 				whitelist: this.state.whitelist,
 				whitelistPending: this.state.whitelistPending,
